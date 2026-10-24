@@ -1,0 +1,108 @@
+.app-shell {
+  width: min(100% - 32px, 720px);
+  margin: 0 auto;
+  padding: 48px 0;
+}
+
+.brand {
+  margin: 0 0 24px;
+  color: #2563eb;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.status-card {
+  padding: 32px;
+  border: 1px solid #dbe3ef;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgb(15 23 42 / 8%);
+}
+
+.status-card h1 {
+  margin: 0 0 12px;
+  color: #172033;
+  font-size: clamp(1.75rem, 6vw, 2.5rem);
+  line-height: 1.2;
+}
+
+.description {
+  margin: 0 0 28px;
+  color: #5d687d;
+}
+
+.status-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 14px;
+  background: #f5f7fb;
+}
+
+.status-box[data-state='success'] {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.status-box[data-state='error'] {
+  background: #fff1f2;
+  color: #9f1239;
+}
+
+.status-dot {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-copy strong,
+.status-copy span {
+  display: block;
+}
+
+.status-copy span {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.retry-button {
+  margin-top: 18px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.retry-button:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 3px;
+}
+
+.simple-page {
+  width: min(100% - 32px, 720px);
+  margin: 0 auto;
+  padding: 48px 0;
+}
+
+@media (max-width: 480px) {
+  .app-shell,
+  .simple-page {
+    width: min(100% - 24px, 720px);
+    padding: 24px 0;
+  }
+
+  .status-card {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+}
