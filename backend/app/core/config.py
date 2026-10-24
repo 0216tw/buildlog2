@@ -10,8 +10,7 @@ class Settings(BaseSettings):
     app_name: str = "BuildLog API"
     api_prefix: str = "/api"
     frontend_origin: str = "http://localhost:5173"
-    database_url: str | None = None
-    migration_database_url: str | None = None
+    database_url: str = "sqlite+pysqlite:///./database/buildlog.sqlite3"
     test_database_url: str = "sqlite+pysqlite:///./database/test.sqlite3"
     app_secret_key: str | None = None
 

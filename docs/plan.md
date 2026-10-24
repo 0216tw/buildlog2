@@ -2,9 +2,9 @@
 
 ## 1. 문서 목적
 
-이 문서는 `PRD.md`와 `spec.md`에 정한 BuildLog 첫 버전을 FastAPI, React, Supabase PostgreSQL로 개발하는 순서를 설명합니다.
+이 문서는 `PRD.md`와 `spec.md`에 정한 BuildLog 첫 버전을 FastAPI, React, SQLite 3로 개발하는 순서를 설명합니다.
 
-실제 서비스 데이터는 Supabase PostgreSQL에 저장하고, 자동 테스트는 SQLite 3를 사용합니다. 데이터베이스가 달라도 사용자가 경험하는 기능과 결과는 같아야 합니다.
+현재 개발 데이터는 프로젝트 내부의 SQLite 3에 저장하고, 자동 테스트는 별도의 임시 SQLite 데이터베이스를 사용합니다.
 
 각 Phase는 기능 구현, 실패 처리, 권한 확인, 테스트를 모두 마친 뒤 다음 Phase로 넘어갑니다.
 
@@ -14,21 +14,20 @@
 | --- | --- | --- |
 | 프론트엔드 | React, TypeScript, Vite | 사용자가 보는 화면과 입력 처리 |
 | 백엔드 | Python, FastAPI | 회원, 기록, 검색, 댓글, 좋아요, 신고 API |
-| 데이터 처리 | SQLAlchemy, Alembic | Supabase PostgreSQL과 SQLite에서 공통으로 사용할 데이터 구조와 변경 이력 관리 |
-| 실제 서비스 DB | Supabase PostgreSQL | 실제 사용자와 기록 데이터 저장 |
-| 테스트 DB | SQLite 3 | 자동 테스트마다 독립적인 데이터 저장 및 초기화 |
+| 데이터 처리 | SQLAlchemy, Alembic | SQLite 데이터 구조와 변경 이력 관리 |
+| 현재 개발 DB | SQLite 3 | 로컬 사용자와 기록 데이터 저장 |
+| 테스트 DB | 임시 SQLite 3 | 자동 테스트마다 독립적인 데이터 저장 및 초기화 |
 | 백엔드 테스트 | pytest | API, 입력 조건, 권한, 데이터 동작 확인 |
 | 프론트엔드 테스트 | Vitest, React Testing Library | 화면 입력과 사용자 동작 확인 |
 
 ### 중요한 경계
 
-- Supabase는 첫 버전에서 데이터베이스로 사용합니다.
-- 회원가입과 로그인 기능은 FastAPI가 처리합니다. Supabase Auth를 임의로 추가하지 않습니다.
+- 회원가입과 로그인 기능은 FastAPI가 처리합니다.
 - React는 FastAPI API만 호출합니다.
-- React에서 Supabase 데이터베이스로 직접 연결하지 않습니다.
-- Supabase 데이터베이스 접속 문자열과 앱 비밀 키는 백엔드 `.env`에만 둡니다.
-- 자동 테스트는 실제 Supabase 데이터를 건드리지 않고 SQLite를 사용합니다.
-- 두 데이터베이스가 다르게 동작할 수 있는 기능은 사용하지 않거나 호환되는 방식으로 작성합니다.
+- React에서 SQLite에 직접 연결하지 않습니다.
+- SQLite 파일 위치와 앱 비밀 키는 백엔드 환경 설정에서 관리합니다.
+- 자동 테스트는 개발 데이터를 건드리지 않고 임시 SQLite를 사용합니다.
+- Supabase 연결은 관련 수업을 진행한 뒤 별도 작업으로 정합니다.
 
 ## 3. 권장 폴더 구조
 
@@ -58,7 +57,8 @@ buildlog/
 │  ├─ .env             # 로컬 화면 설정, Git 제외
 │  └─ .env.example     # 공개 가능한 설정 항목 예시
 ├─ database/
-│  └─ test.sqlite3     # 필요할 때만 만드는 테스트 DB, Git 제외
+│  ├─ README.md        # 로컬 데이터베이스 사용 안내
+│  └─ buildlog.sqlite3 # 개발 중 만드는 로컬 DB, Git 제외
 └─ docs/
 ```
 
@@ -68,11 +68,11 @@ buildlog/
 
 | 환경 | 데이터베이스 | 원칙 |
 | --- | --- | --- |
-| 자동 테스트 | SQLite 3 | 각 테스트가 독립적으로 실행되고 실제 데이터를 사용하지 않음 |
-| 로컬 수동 확인 | Supabase PostgreSQL | 실제 서비스와 같은 데이터베이스 종류로 API 동작 확인 |
-| 실제 서비스 | Supabase PostgreSQL | 운영용 환경 변수로 연결하고 비밀값을 외부에 노출하지 않음 |
+| 자동 테스트 | 임시 SQLite 3 | 각 테스트가 독립적으로 실행되고 개발 데이터를 사용하지 않음 |
+| 로컬 개발 | SQLite 3 | `database/buildlog.sqlite3`에 데이터를 저장함 |
+| 현재 첫 버전 | SQLite 3 | FastAPI만 데이터베이스에 접근함 |
 
-SQLite 테스트가 통과해도 Supabase PostgreSQL에서 마이그레이션과 주요 흐름을 다시 확인합니다.
+Supabase 연결과 검증은 현재 Phase 범위에서 제외하고 관련 수업 이후 별도로 계획합니다.
 
 ## 5. 전체 Phase 순서
 
@@ -81,7 +81,7 @@ SQLite 테스트가 통과해도 Supabase PostgreSQL에서 마이그레이션과
 | Phase 0 | 개발 시작 전 기준과 환경 확인 | 기술 버전, 환경 변수, 실행 방식 확정 |
 | Phase 1 | FastAPI 백엔드 뼈대 | 상태 확인 API와 백엔드 테스트 실행 |
 | Phase 2 | React 프론트엔드 뼈대 | React에서 FastAPI 상태 확인 성공 |
-| Phase 3 | 공통 데이터베이스 구조 | SQLAlchemy 모델, Alembic 이력, SQLite 테스트, Supabase 연결 |
+| Phase 3 | 공통 데이터베이스 구조 | SQLAlchemy 모델, Alembic 이력, SQLite 테스트 |
 | Phase 4 | 회원가입·로그인·닉네임 | 사용자 기능과 인증·권한 완성 |
 | Phase 5 | 공부 기록 | 작성·목록·검색·읽기·수정·삭제 완성 |
 | Phase 6 | 할 일 | 상태·필터·완료 날짜를 포함한 전체 기능 완성 |
@@ -91,7 +91,7 @@ SQLite 테스트가 통과해도 Supabase PostgreSQL에서 마이그레이션과
 | Phase 10 | 좋아요 | 공개 공부·오류 기록의 좋아요 완성 |
 | Phase 11 | 신고와 운영자 확인 | 신고 접수와 운영자 전용 확인 화면 완성 |
 | Phase 12 | 반응형 화면과 공통 실패 처리 | 360px 이상 화면과 공통 안내 완성 |
-| Phase 13 | 전체 통합·Supabase 검증·실행 문서 | MVP 전체 확인과 실행 방법 완성 |
+| Phase 13 | 전체 통합·SQLite 검증·실행 문서 | MVP 전체 확인과 실행 방법 완성 |
 
 ## 6. Phase별 상세 계획
 
@@ -111,15 +111,14 @@ SQLite 테스트가 통과해도 Supabase PostgreSQL에서 마이그레이션과
 6. 백엔드 개발 주소를 `http://127.0.0.1:8000`으로 정합니다.
 7. API 기본 주소를 `/api`로 정합니다.
 8. 백엔드 환경 변수 이름을 정합니다.
-   - `DATABASE_URL`: FastAPI 실행용 Supabase PostgreSQL Session pooler 접속 문자열
-   - `MIGRATION_DATABASE_URL`: Alembic 변경 작업용 Supabase PostgreSQL 직접 접속 문자열
+   - `DATABASE_URL`: FastAPI 실행용 로컬 SQLite 접속 문자열
    - `TEST_DATABASE_URL`: SQLite 테스트 접속 문자열
    - `APP_SECRET_KEY`: 로그인 정보 보호에 사용할 비밀 키
    - `FRONTEND_ORIGIN`: 허용할 React 화면 주소
 9. 프론트엔드 환경 변수 이름을 정합니다.
    - `VITE_API_BASE_URL`: FastAPI 기본 주소
 10. `.env.example`에는 항목 이름과 안전한 예시만 두고 실제 비밀값을 적지 않습니다.
-11. Supabase는 PostgreSQL 데이터베이스로만 사용하고 인증은 FastAPI가 담당함을 다시 확인합니다.
+11. Supabase 연결은 관련 수업 뒤 별도 작업으로 정함을 확인합니다.
 12. 서버 실행, 프론트 실행, 테스트 명령을 기록할 `docs/setup.md`의 구성을 정합니다.
 
 #### 변경 파일
@@ -134,7 +133,7 @@ SQLite 테스트가 통과해도 Supabase PostgreSQL에서 마이그레이션과
 #### 확인 방법
 
 - 세 문서에서 이전 기술 구성의 전제가 남아 있지 않은지 확인합니다.
-- 실제 서비스 DB와 테스트 DB의 역할이 구분되어 있는지 확인합니다.
+- 로컬 개발 DB와 임시 테스트 DB의 역할이 구분되어 있는지 확인합니다.
 - 비밀값을 사용자에게 채팅으로 요구하거나 문서에 기록하지 않는지 확인합니다.
 - 개발 도구가 설치되어 있는지 읽기 전용 명령으로 확인합니다.
 
@@ -168,7 +167,7 @@ SQLite 테스트가 통과해도 Supabase PostgreSQL에서 마이그레이션과
 
 - FastAPI 서버와 API 문서가 열립니다.
 - 상태 확인 API와 SQLite 테스트가 통과합니다.
-- 실제 Supabase 비밀값 없이도 기본 테스트를 실행할 수 있습니다.
+- 외부 데이터베이스 접속 정보 없이 기본 테스트를 실행할 수 있습니다.
 
 ---
 
@@ -194,31 +193,31 @@ React 화면을 실행하고 FastAPI API와 통신할 수 있게 합니다.
 - React 개발 서버가 실행됩니다.
 - React에서 FastAPI 상태 확인 결과를 볼 수 있습니다.
 - 프론트엔드 테스트와 빌드가 통과합니다.
-- React 코드에 Supabase 접속 비밀값이 없습니다.
+- React 코드에 데이터베이스 접속 정보가 없습니다.
 
 ---
 
-### Phase 3. 공통 데이터베이스 구조와 Supabase 연결
+### Phase 3. SQLite 데이터베이스 구조
 
 #### 목표
 
-같은 데이터 구조가 Supabase PostgreSQL과 SQLite 테스트에서 동작하게 합니다.
+로컬 개발과 자동 테스트에서 사용할 SQLite 데이터 구조를 만듭니다.
 
 #### 작업
 
-1. SQLAlchemy 실제 DB 연결과 테스트 DB 연결을 분리합니다.
+1. SQLAlchemy 로컬 DB 연결과 임시 테스트 DB 연결을 분리합니다.
 2. Alembic 데이터베이스 변경 이력을 준비합니다.
 3. 사용자, 공부 기록, 할 일, 오류 기록 모델을 만듭니다.
 4. 댓글, 좋아요, 신고 모델을 만듭니다.
 5. 기본 공개·완료·해결 상태와 중복 방지 규칙을 적용합니다.
 6. SQLite에서 테이블 생성과 모델 테스트를 실행합니다.
-7. Supabase PostgreSQL에 첫 Alembic 변경 이력을 적용합니다.
-8. 두 데이터베이스에서 기본 저장·조회 동작을 비교합니다.
+7. 첫 Alembic 변경 이력을 빈 SQLite 데이터베이스에 적용하고 되돌립니다.
+8. 모델과 Alembic 변경 이력이 같은 구조인지 확인합니다.
 
 #### 완료 조건
 
-- SQLite 자동 테스트와 Supabase PostgreSQL 기본 확인이 모두 통과합니다.
-- Supabase 연결 문자열은 백엔드 `.env` 밖으로 노출되지 않습니다.
+- SQLite 모델 테스트와 Alembic 적용·되돌리기가 모두 통과합니다.
+- 개발용 SQLite 파일과 임시 테스트 파일이 Git에 포함되지 않습니다.
 
 ---
 
@@ -242,7 +241,6 @@ FastAPI 인증 API와 React 회원 화면을 연결합니다.
 
 - 사용자 A, 사용자 B, 운영자 계정을 구분할 수 있습니다.
 - 회원 기능의 정상·실패·권한 테스트가 SQLite에서 통과합니다.
-- Supabase PostgreSQL에서도 가입과 로그인을 확인합니다.
 
 ---
 
@@ -266,7 +264,6 @@ FastAPI 인증 API와 React 회원 화면을 연결합니다.
 #### 완료 조건
 
 - 공부 기록 전체 흐름, 경계값, 검색, 권한 테스트가 통과합니다.
-- SQLite와 Supabase PostgreSQL에서 같은 결과를 확인합니다.
 
 ---
 
@@ -435,20 +432,20 @@ FastAPI 인증 API와 React 회원 화면을 연결합니다.
 
 ---
 
-### Phase 13. 전체 통합·Supabase 검증·실행 문서
+### Phase 13. 전체 통합·SQLite 검증·실행 문서
 
 #### 목표
 
-SQLite 자동 테스트와 Supabase PostgreSQL 실제 연결을 함께 확인하고 MVP를 완료합니다.
+SQLite 자동 테스트와 로컬 데이터 유지 동작을 함께 확인하고 MVP를 완료합니다.
 
 #### 작업
 
 1. 모든 백엔드 테스트를 SQLite로 실행합니다.
 2. 모든 프론트엔드 테스트와 빌드를 실행합니다.
 3. 사용자 A, 사용자 B, 운영자로 전체 권한 시나리오를 확인합니다.
-4. Supabase PostgreSQL에 Alembic 변경 이력을 처음부터 적용합니다.
-5. Supabase에서 회원, 세 기록, 공개 검색, 댓글, 좋아요, 신고 흐름을 확인합니다.
-6. 서버를 다시 실행한 뒤 Supabase 데이터가 유지되는지 확인합니다.
+4. 빈 SQLite 데이터베이스에 Alembic 변경 이력을 처음부터 적용합니다.
+5. SQLite에서 회원, 세 기록, 공개 검색, 댓글, 좋아요, 신고 흐름을 확인합니다.
+6. 서버를 다시 실행한 뒤 로컬 SQLite 데이터가 유지되는지 확인합니다.
 7. 비공개 기록이 목록, 검색, 직접 API 요청에서 노출되지 않는지 다시 확인합니다.
 8. `.env.example`에 실제 비밀값이 없는지 확인합니다.
 9. 설치, 환경 변수, 실행, 테스트, DB 변경 방법을 `docs/setup.md`에 작성합니다.
@@ -459,7 +456,7 @@ SQLite 자동 테스트와 Supabase PostgreSQL 실제 연결을 함께 확인하
 
 - SQLite 자동 테스트가 모두 통과합니다.
 - React 테스트와 배포용 빌드가 통과합니다.
-- Supabase PostgreSQL에서 MVP 전체 흐름이 동작합니다.
+- 로컬 SQLite에서 MVP 전체 흐름과 데이터 유지가 동작합니다.
 - 문서만 보고 새 환경에서 프로젝트를 실행할 수 있습니다.
 
 ## 7. 기능과 Phase 대응표
@@ -468,7 +465,7 @@ SQLite 자동 테스트와 Supabase PostgreSQL 실제 연결을 함께 확인하
 | --- | --- | --- |
 | FastAPI 기반 | Phase 1 | Phase 13 |
 | React 기반 | Phase 2 | Phase 12, 13 |
-| Supabase PostgreSQL·SQLite 테스트 | Phase 3 | Phase 13 |
+| SQLite 개발 DB·임시 테스트 DB | Phase 3 | Phase 13 |
 | 회원가입·로그인·닉네임 | Phase 4 | Phase 13 |
 | 공부 기록 | Phase 5 | Phase 13 |
 | 할 일 | Phase 6 | Phase 13 |
@@ -487,7 +484,7 @@ SQLite 자동 테스트와 Supabase PostgreSQL 실제 연결을 함께 확인하
 - [ ] 입력값의 최소·최대와 실패 흐름을 확인했습니다.
 - [ ] 로그인 여부와 작성자·운영자 권한을 확인했습니다.
 - [ ] SQLite 자동 테스트가 통과했습니다.
-- [ ] 해당 Phase에서 요구한 Supabase 확인이 통과했습니다.
+- [ ] 해당 Phase에서 요구한 SQLite 마이그레이션 확인이 통과했습니다.
 - [ ] React 화면과 FastAPI API의 결과가 일치합니다.
 - [ ] 컴퓨터와 360px 화면에서 사용할 수 있습니다.
 - [ ] `spec.md`와 다르게 구현된 부분이 없습니다.

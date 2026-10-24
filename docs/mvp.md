@@ -198,7 +198,7 @@ BuildLog의 첫 MVP에서는 다음 세 가지 기록을 관리합니다.
 
 - 화면은 React, TypeScript, Vite로 만듭니다.
 - 서버는 Python과 FastAPI로 만듭니다.
-- 실제 서비스 데이터는 Supabase의 PostgreSQL에 저장합니다.
-- 자동 테스트에서는 SQLite 3를 사용합니다.
+- 현재 개발 데이터는 프로젝트 내부의 SQLite 3에 저장합니다.
+- 자동 테스트에서는 별도의 임시 SQLite 데이터베이스를 사용합니다.
 - React는 FastAPI API를 통해서만 데이터를 읽고 저장합니다.
-- Supabase의 비밀 접속 정보는 코드나 문서에 적지 않고 환경 변수로 관리합니다.
+- Supabase 연결은 관련 수업을 진행한 뒤 별도 작업으로 정합니다.
